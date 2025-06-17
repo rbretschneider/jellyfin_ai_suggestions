@@ -1,0 +1,413 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>AI Search</title>
+</head>
+<body>
+    <div id="GeminiSearchPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <!-- Search Interface - Always Visible -->
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h1 class="sectionTitle">🔍 AI Search</h1>
+                </div>
+
+                <div class="verticalSection">
+                    <p>Search for movies and TV shows using AI-powered recommendations. Enter a description, genre, or mood and get personalized suggestions.</p>
+                </div>
+
+                <!-- Debug info -->
+                <div id="debugInfo" style="background: #333; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; font-size: 12px; color: #0f0; display: none;">
+                    Debug: Page loaded at <span id="loadTime"></span>
+                </div>
+
+                <div class="inputContainer" style="margin-top: 20px;">
+                    <label class="inputLabel inputLabelUnfocused" for="txtSearchQuery">What are you in the mood for?</label>
+                    <input is="emby-input" type="text" id="txtSearchQuery" name="txtSearchQuery"
+                           placeholder="e.g., 'toddler friendly comedies', 'sci-fi movies from the 80s', 'feel-good romantic comedies'"
+                           style="font-size: 16px; padding: 12px;" />
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <button is="emby-button" type="button" id="btnSearch" class="raised button-submit block" style="font-size: 16px; padding: 12px 24px;">
+                        <span>🚀 Search with AI</span>
+                    </button>
+                </div>
+
+                <div id="searchLoading" style="display: none; margin-top: 20px; text-align: center;">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 10px;">Searching with Gemini AI...</p>
+                </div>
+
+                <div id="searchResults" style="margin-top: 20px;"></div>
+
+                <!-- Admin Configuration Section -->
+                <div id="adminSection" style="display: none; margin-top: 50px; border-top: 2px solid #444; padding-top: 30px;">
+                    <form id="GeminiSearchConfigForm">
+                        <div class="sectionTitleContainer flex align-items-center">
+                            <h2 class="sectionTitle">⚙️ Admin Configuration</h2>
+                        </div>
+
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="txtGeminiApiKey">Google Gemini API Key:</label>
+                            <input is="emby-input" type="password" id="txtGeminiApiKey" name="txtGeminiApiKey" />
+                            <div class="fieldDescription">
+                                Get your API key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
+                            </div>
+                        </div>
+
+                        <div class="inputContainer">
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label>
+                                    <input is="emby-checkbox" type="checkbox" id="chkEnabled" name="chkEnabled" />
+                                    <span>Enable Gemini Search</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">
+                                    When enabled, all users can access AI Search.
+                                </div>
+                            </div>
+                        </div>
+
+                        <br />
+                        <button is="emby-button" type="submit" class="raised button-submit block"><span>Save Configuration</span></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            var GeminiSearchConfig = {
+                pluginUniqueId: "a4df60c5-6ab4-412a-8f79-2cab93fb2bc5"
+            };
+
+            // Debug logging function
+            function debugLog(message, data) {
+                console.log('[AI Search Debug]', message, data || '');
+                const debugDiv = document.getElementById('debugInfo');
+                if (debugDiv && debugDiv.style.display !== 'none') {
+                    debugDiv.innerHTML += '<br>• ' + message + (data ? ': ' + JSON.stringify(data, null, 2) : '');
+                }
+            }
+
+            document.getElementById('GeminiSearchPage').addEventListener('pageshow', function () {
+                debugLog('Page show event fired');
+                if (document.getElementById('loadTime')) {
+                    document.getElementById('loadTime').textContent = new Date().toLocaleTimeString();
+                }
+
+                // Check if user is admin to show config section
+                Dashboard.getCurrentUser().then(function (user) {
+                    debugLog('Got current user', user?.Name);
+                    if (user && user.Policy && user.Policy.IsAdministrator) {
+                        document.getElementById('adminSection').style.display = 'block';
+                        debugLog('Admin user detected, showing admin section');
+
+                        // Load configuration for admin
+                        Dashboard.showLoadingMsg();
+                        ApiClient.getPluginConfiguration(GeminiSearchConfig.pluginUniqueId).then(function (config) {
+                            document.getElementById('txtGeminiApiKey').value = config.GeminiApiKey || '';
+                            document.getElementById('chkEnabled').checked = config.Enabled !== false; // Default to true
+                            Dashboard.hideLoadingMsg();
+                            debugLog('Configuration loaded', config);
+                        }).catch(function (error) {
+                            Dashboard.hideLoadingMsg();
+                            debugLog('Error loading config', error);
+                        });
+                    }
+                }).catch(function (error) {
+                    debugLog('Error getting current user', error);
+                });
+
+                // Focus search input
+                setTimeout(function () {
+                    document.getElementById('txtSearchQuery').focus();
+                    debugLog('Search input focused');
+                }, 100);
+            });
+
+            // Admin configuration form
+            document.getElementById('GeminiSearchConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                debugLog('Config form submitted');
+                Dashboard.showLoadingMsg();
+
+                ApiClient.getPluginConfiguration(GeminiSearchConfig.pluginUniqueId).then(function (config) {
+                    config.GeminiApiKey = document.getElementById('txtGeminiApiKey').value;
+                    config.Enabled = document.getElementById('chkEnabled').checked;
+
+                    debugLog('Saving config', config);
+                    ApiClient.updatePluginConfiguration(GeminiSearchConfig.pluginUniqueId, config).then(function () {
+                        Dashboard.processPluginConfigurationUpdateResult();
+                        debugLog('Config saved successfully');
+                    }).catch(function (error) {
+                        Dashboard.hideLoadingMsg();
+                        debugLog('Error saving config', error);
+                    });
+                }).catch(function (error) {
+                    Dashboard.hideLoadingMsg();
+                    debugLog('Error getting config for save', error);
+                });
+            });
+
+            // Search functionality
+            document.getElementById('txtSearchQuery').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    debugLog('Enter key pressed, triggering search');
+                    performSearch();
+                }
+            });
+
+            document.getElementById('btnSearch').addEventListener('click', function () {
+                debugLog('Search button clicked');
+                performSearch();
+            });
+
+            function performSearch() {
+                var query = document.getElementById('txtSearchQuery').value.trim();
+                debugLog('performSearch called with query', query);
+
+                if (!query) {
+                    debugLog('Empty query, showing alert');
+                    Dashboard.alert('Please enter a search query');
+                    return;
+                }
+
+                debugLog('Starting search process');
+                document.getElementById('searchLoading').style.display = 'block';
+                document.getElementById('searchResults').innerHTML = '';
+                document.getElementById('btnSearch').disabled = true;
+
+                var searchUrl = ApiClient.getUrl('Plugins/GeminiSearch/search?query=' + encodeURIComponent(query));
+                debugLog('Search URL constructed', searchUrl);
+
+                // FUCK ApiClient - use raw fetch with auth headers
+                var headers = {
+                    'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
+                };
+
+                fetch(searchUrl, { headers: headers })
+                    .then(response => {
+                        console.log('Fetch response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Fetch data received:', data);
+
+                        document.getElementById('searchLoading').style.display = 'none';
+                        document.getElementById('btnSearch').disabled = false;
+
+                        // DISPLAY THE FUCKING RESULTS
+                        var container = document.getElementById('searchResults');
+                        var html = '<h2>Results for "' + (data.Query || 'your search') + '"</h2>';
+
+                        if (data && data.Results && data.Results.length > 0) {
+                            html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">';
+
+                            for (var i = 0; i < data.Results.length; i++) {
+                                var result = data.Results[i];
+                                var statusColor = result.InLibrary ? '#00a4dc' : '#cc7b19';
+                                var statusText = result.InLibrary ? '✅ In Your Library' : '📥 Not in Library';
+                                var mediaIcon = result.Type === 'movie' ? '🎬' : '📺';
+
+                                // Better type display with icons
+                                var typeDisplay = result.Type === 'movie' ? '🎬 Movie' : '📺 TV Show';
+
+                                html += '<div style="border: 1px solid #444; margin: 10px; padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.05);">';
+                                html += '<div style="display: flex; align-items: center; margin-bottom: 10px;">';
+                                html += '  <span style="font-size: 24px; margin-right: 10px;">' + mediaIcon + '</span>';
+                                html += '  <div>';
+                                html += '    <h3 style="margin: 0; font-size: 18px; font-weight: bold;">' + result.Title + '</h3>';
+                                html += '    <p style="margin: 2px 0; color: #aaa; font-size: 14px;">' + result.Year + ' • ' + typeDisplay + '</p>';
+                                html += '  </div>';
+                                html += '</div>';
+                                html += '<p style="margin: 10px 0; line-height: 1.4; color: #ccc;">' + result.Description + '</p>';
+                                html += '<div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between;">';
+                                html += '  <span style="color: ' + statusColor + '; font-weight: bold; font-size: 14px;">' + statusText + '</span>';
+
+                                if (result.InLibrary && result.JellyfinId) {
+                                    // Instead of broken navigation, use search functionality
+                                    html += '  <div style="display: flex; gap: 8px;">';
+                                    html += '    <button onclick="searchForTitle(\'' + result.Title.replace(/'/g, "\\'") + '\');" style="background: #00a4dc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">🔍 Search in Library</button>';
+                                    html += '    <button onclick="copyItemInfo(\'' + result.Title.replace(/'/g, "\\'") + '\', \'' + result.JellyfinId + '\');" style="background: #666; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;" title="Copy Info">📋</button>';
+                                    html += '  </div>';
+                                }
+                                html += '</div>';
+                                html += '</div>';
+                            }
+                            html += '</div>';
+
+                            // Summary
+                            var inLibraryCount = data.Results.filter(function (r) { return r.InLibrary; }).length;
+                            html += '<div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">';
+                            html += '<p style="margin: 0;">Found <strong>' + data.Results.length + '</strong> recommendations • <strong>' + inLibraryCount + '</strong> already in your library</p>';
+                            html += '</div>';
+                        } else {
+                            html += '<div style="text-align: center; padding: 40px; color: #aaa;">';
+                            html += '<p style="font-size: 18px; margin-bottom: 10px;">🤔 No results found</p>';
+                            html += '<p>Try a different search query.</p>';
+                            html += '</div>';
+                        }
+
+                        container.innerHTML = html;
+                        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        document.getElementById('searchLoading').style.display = 'none';
+                        document.getElementById('btnSearch').disabled = false;
+                        Dashboard.alert('Search failed: ' + error.message);
+                    });
+            }
+
+            function displaySearchResults(response) {
+                console.log('FORCE DISPLAY - Raw response:', response);
+
+                var container = document.getElementById('searchResults');
+                if (!container) {
+                    console.error('Container not found!');
+                    return;
+                }
+
+                // JUST FUCKING DISPLAY IT
+                var html = '<h2>FORCED RESULTS DISPLAY</h2>';
+                html += '<pre style="background: #222; padding: 10px; color: #0f0; overflow: auto;">';
+                html += JSON.stringify(response, null, 2);
+                html += '</pre>';
+
+                // TRY TO DISPLAY RESULTS ANYWAY
+                try {
+                    if (response.Results) {
+                        html += '<h3>Parsed Results:</h3>';
+                        html += '<div class="itemsContainer">';
+
+                        for (var i = 0; i < response.Results.length; i++) {
+                            var result = response.Results[i];
+                            var statusColor = result.InLibrary ? '#00a4dc' : '#cc7b19';
+                            var statusText = result.InLibrary ? '✅ In Your Library' : '📥 Not in Library';
+                            var mediaIcon = result.Type === 'movie' ? '🎬' : '📺';
+
+                            html += '<div style="border: 1px solid #444; margin: 10px; padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.05);">';
+                            html += '<h4>' + mediaIcon + ' ' + result.Title + ' (' + result.Year + ')</h4>';
+                            html += '<p><strong>Type:</strong> ' + result.Type + '</p>';
+                            html += '<p><strong>Description:</strong> ' + result.Description + '</p>';
+                            html += '<p style="color: ' + statusColor + '; font-weight: bold;">' + statusText + '</p>';
+
+                            if (result.InLibrary && result.JellyfinId) {
+                                html += '<button onclick="Dashboard.navigate(\'itemdetails.html?id=' + result.JellyfinId + '\');" style="background: #00a4dc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">View in Library</button>';
+                            }
+                            html += '</div>';
+                        }
+                        html += '</div>';
+                    }
+                } catch (e) {
+                    html += '<p style="color: red;">Error parsing results: ' + e.message + '</p>';
+                }
+
+                container.innerHTML = html;
+                console.log('FORCED DISPLAY COMPLETE');
+            }
+
+            // Add custom styles
+            var style = document.createElement('style');
+            style.textContent = `
+                        .loading-spinner {
+                            border: 3px solid rgba(255,255,255,0.3);
+                            border-top: 3px solid #00a4dc;
+                            border-radius: 50%;
+                            width: 30px;
+                            height: 30px;
+                            animation: spin 1s linear infinite;
+                            margin: 0 auto;
+                        }
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                        .itemsContainer {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                            gap: 15px;
+                        }
+                        @media (max-width: 768px) {
+                            .itemsContainer {
+                                grid-template-columns: 1fr;
+                            }
+                        }
+                    `;
+            document.head.appendChild(style);
+
+            debugLog('Page script fully loaded and initialized');
+
+            // Helper function to search for content in Jellyfin
+            function searchForTitle(title) {
+                console.log('Searching for title:', title);
+
+                try {
+                    // Method 1: Try the most common search URL format
+                    var searchUrl = '#!/search?query=' + encodeURIComponent(title);
+                    console.log('Navigating to search:', searchUrl);
+
+                    // Navigate first
+                    window.location.hash = searchUrl;
+
+                    // Give it a moment to load, then try to trigger the search
+                    setTimeout(function () {
+                        console.log('Checking if search loaded properly...');
+
+                        // Try to find the search input and fill it
+                        var searchInput = document.querySelector('input[type="search"]') ||
+                            document.querySelector('input[placeholder*="search"]') ||
+                            document.querySelector('.searchInput') ||
+                            document.querySelector('#txtSearch');
+
+                        if (searchInput) {
+                            console.log('Found search input, filling with:', title);
+                            searchInput.value = title;
+                            searchInput.focus();
+
+                            // Try to trigger the search
+                            var event = new Event('input', { bubbles: true });
+                            searchInput.dispatchEvent(event);
+
+                            // Also try Enter key
+                            setTimeout(function () {
+                                var enterEvent = new KeyboardEvent('keypress', {
+                                    key: 'Enter',
+                                    keyCode: 13,
+                                    which: 13,
+                                    bubbles: true
+                                });
+                                searchInput.dispatchEvent(enterEvent);
+                            }, 100);
+                        } else {
+                            console.log('No search input found, trying alternative navigation');
+                            // Try alternative URL format
+                            window.location.hash = '#!/search.html?query=' + encodeURIComponent(title);
+                        }
+                    }, 500);
+
+                } catch (error) {
+                    console.error('Search navigation error:', error);
+                    alert('Search failed. Try searching manually for: "' + title + '"');
+                }
+            }
+
+            // Helper function to copy item information
+            function copyItemInfo(title, itemId) {
+                var info = 'Title: ' + title + '\nItem ID: ' + itemId;
+                navigator.clipboard.writeText(info).then(function () {
+                    alert('Copied to clipboard:\n' + info);
+                }).catch(function () {
+                    alert('Item Info:\n' + info + '\n\nCopy this to search manually in your library.');
+                });
+            }
+
+            // Make functions globally available
+            window.searchForTitle = searchForTitle;
+            window.copyItemInfo = copyItemInfo;
+        </script>
+    </div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+    "guid": "a4df60c5-6ab4-412a-8f79-2cab93fb2bc5",
+    "name": "Gemini Search",
+    "description": "Search for movies and TV shows using Google Gemini AI and check availability in your library",
+    "overview": "AI-powered content discovery with library matching",
+    "owner": "YourName",
+    "category": "General",
+    "version": "1.0.0.0",
+    "changelog": "Initial release",
+    "targetAbi": "10.10.0.0",
+    "timestamp": "2025-06-07T00:00:00Z"
+}

@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>AI Search</title>
+</head>
+<body>
+    <div id="GeminiSearchPage" data-role="page" class="page type-interior" data-require="emby-input,emby-button">
+        <div data-role="content">
+            <div class="content-primary">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h1 class="sectionTitle">🔍 AI Search</h1>
+                </div>
+
+                <div class="verticalSection">
+                    <p>Search for movies and TV shows using AI-powered recommendations. Enter a description, genre, or mood and get personalized suggestions.</p>
+                </div>
+
+                <div class="inputContainer" style="margin-top: 30px;">
+                    <label class="inputLabel inputLabelUnfocused" for="txtSearchQuery">What are you in the mood for?</label>
+                    <input is="emby-input" type="text" id="txtSearchQuery" name="txtSearchQuery"
+                           placeholder="e.g., 'toddler friendly comedies', 'sci-fi movies from the 80s', 'feel-good romantic comedies'"
+                           style="font-size: 16px; padding: 12px;" />
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button is="emby-button" type="button" id="btnSearch" class="raised button-submit block" style="font-size: 16px; padding: 12px 24px;">
+                        <span>🚀 Search with AI</span>
+                    </button>
+                </div>
+
+                <div id="searchLoading" style="display: none; margin-top: 30px; text-align: center;">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 10px;">Searching with Gemini AI...</p>
+                </div>
+
+                <div id="searchResults" style="margin-top: 30px;"></div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            document.getElementById('GeminiSearchPage').addEventListener('pageshow', function () {
+                // Focus search input
+                setTimeout(function() {
+                    document.getElementById('txtSearchQuery').focus();
+                }, 100);
+            });
+
+            // Allow Enter key to trigger search
+            document.getElementById('txtSearchQuery').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            document.getElementById('btnSearch').addEventListener('click', performSearch);
+
+            function performSearch() {
+                var query = document.getElementById('txtSearchQuery').value.trim();
+
+                if (!query) {
+                    Dashboard.alert('Please enter a search query');
+                    return;
+                }
+
+                console.log('Performing search for:', query);
+
+                document.getElementById('searchLoading').style.display = 'block';
+                document.getElementById('searchResults').innerHTML = '';
+                document.getElementById('btnSearch').disabled = true;
+
+                var searchUrl = ApiClient.getUrl('Plugins/GeminiSearch/search?query=' + encodeURIComponent(query));
+                console.log('Search URL:', searchUrl);
+
+                // Use raw fetch with auth headers (as we discovered ApiClient.ajax was broken)
+                var headers = {
+                    'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
+                };
+
+                fetch(searchUrl, { headers: headers })
+                    .then(response => {
+                        console.log('Fetch response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Fetch data received:', data);
+
+                        document.getElementById('searchLoading').style.display = 'none';
+                        document.getElementById('btnSearch').disabled = false;
+
+                        // DISPLAY THE RESULTS
+                        var container = document.getElementById('searchResults');
+                        var html = '<h2>Results for "' + (data.Query || 'your search') + '"</h2>';
+
+                        if (data && data.Results && data.Results.length > 0) {
+                            html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">';
+
+                            for (var i = 0; i < data.Results.length; i++) {
+                                var result = data.Results[i];
+                                var statusColor = result.InLibrary ? '#00a4dc' : '#cc7b19';
+                                var statusText = result.InLibrary ? '✅ In Your Library' : '📥 Not in Library';
+                                var mediaIcon = result.Type === 'movie' ? '🎬' : '📺';
+
+                                // Better type display with icons
+                                var typeDisplay = result.Type === 'movie' ? '🎬 Movie' : '📺 TV Show';
+
+                                html += '<div style="border: 1px solid #444; margin: 10px; padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.05);">';
+                                html += '<div style="display: flex; align-items: center; margin-bottom: 10px;">';
+                                html += '  <span style="font-size: 24px; margin-right: 10px;">' + mediaIcon + '</span>';
+                                html += '  <div>';
+                                html += '    <h3 style="margin: 0; font-size: 18px; font-weight: bold;">' + result.Title + '</h3>';
+                                html += '    <p style="margin: 2px 0; color: #aaa; font-size: 14px;">' + result.Year + ' • ' + typeDisplay + '</p>';
+                                html += '  </div>';
+                                html += '</div>';
+                                html += '<p style="margin: 10px 0; line-height: 1.4; color: #ccc;">' + result.Description + '</p>';
+                                html += '<div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between;">';
+                                html += '  <span style="color: ' + statusColor + '; font-weight: bold; font-size: 14px;">' + statusText + '</span>';
+
+                                if (result.InLibrary && result.JellyfinId) {
+                                    html += '  <div style="display: flex; gap: 8px;">';
+                                    html += '    <button onclick="searchForTitle(\'' + result.Title.replace(/'/g, "\\'") + '\');" style="background: #00a4dc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">🔍 Search in Library</button>';
+                                    html += '    <button onclick="copyItemInfo(\'' + result.Title.replace(/'/g, "\\'") + '\', \'' + result.JellyfinId + '\');" style="background: #666; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;" title="Copy Info">📋</button>';
+                                    html += '  </div>';
+                                }
+                                html += '</div>';
+                                html += '</div>';
+                            }
+                            html += '</div>';
+
+                            // Summary
+                            var inLibraryCount = data.Results.filter(function(r) { return r.InLibrary; }).length;
+                            html += '<div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">';
+                            html += '<p style="margin: 0;">Found <strong>' + data.Results.length + '</strong> recommendations • <strong>' + inLibraryCount + '</strong> already in your library</p>';
+                            html += '</div>';
+                        } else {
+                            html += '<div style="text-align: center; padding: 40px; color: #aaa;">';
+                            html += '<p style="font-size: 18px; margin-bottom: 10px;">🤔 No results found</p>';
+                            html += '<p>Try a different search query.</p>';
+                            html += '</div>';
+                        }
+
+                        container.innerHTML = html;
+                        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        document.getElementById('searchLoading').style.display = 'none';
+                        document.getElementById('btnSearch').disabled = false;
+
+                        var errorMsg = 'Search failed. ';
+                        if (error.message.includes('401') || error.message.includes('403')) {
+                            errorMsg += 'Please make sure AI Search is configured by your administrator.';
+                        } else {
+                            errorMsg += 'Please try again or contact your administrator if the problem persists.';
+                        }
+                        Dashboard.alert(errorMsg);
+                    });
+            }
+
+            // Helper function to search for content in Jellyfin
+            function searchForTitle(title) {
+                console.log('Searching for title:', title);
+
+                try {
+                    var searchUrl = '#!/search?query=' + encodeURIComponent(title);
+                    console.log('Navigating to search:', searchUrl);
+
+                    window.location.hash = searchUrl;
+
+                    setTimeout(function() {
+                        console.log('Checking if search loaded properly...');
+
+                        var searchInput = document.querySelector('input[type="search"]') ||
+                                         document.querySelector('input[placeholder*="search"]') ||
+                                         document.querySelector('.searchInput') ||
+                                         document.querySelector('#txtSearch');
+
+                        if (searchInput) {
+                            console.log('Found search input, filling with:', title);
+                            searchInput.value = title;
+                            searchInput.focus();
+
+                            var event = new Event('input', { bubbles: true });
+                            searchInput.dispatchEvent(event);
+
+                            setTimeout(function() {
+                                var enterEvent = new KeyboardEvent('keypress', {
+                                    key: 'Enter',
+                                    keyCode: 13,
+                                    which: 13,
+                                    bubbles: true
+                                });
+                                searchInput.dispatchEvent(enterEvent);
+                            }, 100);
+                        } else {
+                            console.log('No search input found, trying alternative navigation');
+                            window.location.hash = '#!/search.html?query=' + encodeURIComponent(title);
+                        }
+                    }, 500);
+
+                } catch (error) {
+                    console.error('Search navigation error:', error);
+                    alert('Search failed. Try searching manually for: "' + title + '"');
+                }
+            }
+
+            // Helper function to copy item information
+            function copyItemInfo(title, itemId) {
+                var info = 'Title: ' + title + '\nItem ID: ' + itemId;
+                navigator.clipboard.writeText(info).then(function() {
+                    alert('Copied to clipboard:\n' + info);
+                }).catch(function() {
+                    alert('Item Info:\n' + info + '\n\nCopy this to search manually in your library.');
+                });
+            }
+
+            // Make functions globally available
+            window.searchForTitle = searchForTitle;
+            window.copyItemInfo = copyItemInfo;
+
+            // Add some custom styles
+            var style = document.createElement('style');
+            style.textContent = `
+                .loading-spinner {
+                    border: 3px solid rgba(255,255,255,0.3);
+                    border-top: 3px solid #00a4dc;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        </script>
+    </div>
+</body>
+</html>

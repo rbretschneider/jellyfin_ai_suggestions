@@ -10,3 +10,16 @@ C:\Repos\GeminiSearch\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plu
 C:\Repos\GeminiSearch\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\refint\Jellyfin.Plugin.GeminiSearch.dll
 C:\Repos\GeminiSearch\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.pdb
 C:\Repos\GeminiSearch\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\ref\Jellyfin.Plugin.GeminiSearch.dll
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\bin\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.deps.json
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\bin\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.dll
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\bin\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.pdb
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.csproj.AssemblyReference.cache
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.GeneratedMSBuildEditorConfig.editorconfig
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.AssemblyInfoInputs.cache
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.AssemblyInfo.cs
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.csproj.CoreCompileInputs.cache
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.sourcelink.json
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.dll
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\refint\Jellyfin.Plugin.GeminiSearch.dll
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\Jellyfin.Plugin.GeminiSearch.pdb
+C:\Repos\jellyfin_ai_suggestions\Jellyfin.Plugin.GeminiSearch\obj\Debug\net8.0\ref\Jellyfin.Plugin.GeminiSearch.dll

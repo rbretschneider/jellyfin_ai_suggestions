@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v8.0": {
-      "Jellyfin.Plugin.GeminiSearch/1.0.0": {
+      "Jellyfin.Plugin.GeminiSearch/2.0.0.0": {
         "dependencies": {
           "Jellyfin.Controller": "10.10.7",
           "Jellyfin.Model": "10.10.7"
@@ -237,7 +237,7 @@
     }
   },
   "libraries": {
-    "Jellyfin.Plugin.GeminiSearch/1.0.0": {
+    "Jellyfin.Plugin.GeminiSearch/2.0.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

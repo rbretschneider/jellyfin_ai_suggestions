@@ -5,7 +5,7 @@
   },
   "projects": {
     "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Jellyfin.Plugin.GeminiSearch.csproj": {
-      "version": "1.0.0",
+      "version": "2.0.0",
       "restore": {
         "projectUniqueName": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Jellyfin.Plugin.GeminiSearch.csproj",
         "projectName": "Jellyfin.Plugin.GeminiSearch",

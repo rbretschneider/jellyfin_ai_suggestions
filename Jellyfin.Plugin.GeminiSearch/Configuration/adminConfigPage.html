@@ -76,337 +76,765 @@
             </div>
         </div>
 
-        <script type="text/javascript">
-            var GeminiSearchConfig = {
-                pluginUniqueId: "a4df60c5-6ab4-412a-8f79-2cab93fb2bc5"
-            };
+        <!-- Playlist Selection Modal -->
+        <div id="playlistModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #181818; border-radius: 8px; padding: 20px; max-width: 500px; width: 90%; max-height: 80%; overflow-y: auto;">
+                <h3 style="margin-top: 0;">📝 Select Playlist</h3>
+                <div id="playlistList" style="margin: 20px 0;">
+                    <!-- Playlists will be loaded here -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="createNewPlaylist()" style="background: #00a4dc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; flex: 1;">➕ Create New Playlist</button>
+                    <button onclick="closePlaylistModal()" style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Cancel</button>
+                </div>
+            </div>
+        </div>
 
-            // Debug logging function
-            function debugLog(message, data) {
-                console.log('[AI Search Debug]', message, data || '');
-                const debugDiv = document.getElementById('debugInfo');
-                if (debugDiv && debugDiv.style.display !== 'none') {
-                    debugDiv.innerHTML += '<br>• ' + message + (data ? ': ' + JSON.stringify(data, null, 2) : '');
+        <!-- Add custom styles -->
+        <style>
+            .loading-spinner {
+                border: 3px solid rgba(255,255,255,0.3);
+                border-top: 3px solid #00a4dc;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
                 }
             }
 
-            document.getElementById('GeminiSearchPage').addEventListener('pageshow', function () {
-                debugLog('Page show event fired');
-                if (document.getElementById('loadTime')) {
-                    document.getElementById('loadTime').textContent = new Date().toLocaleTimeString();
+            .itemsContainer {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 15px;
+            }
+
+            @media (max-width: 768px) {
+                .itemsContainer {
+                    grid-template-columns: 1fr;
                 }
+            }
+        </style>
 
-                // Check if user is admin to show config section
-                Dashboard.getCurrentUser().then(function (user) {
-                    debugLog('Got current user', user?.Name);
-                    if (user && user.Policy && user.Policy.IsAdministrator) {
-                        document.getElementById('adminSection').style.display = 'block';
-                        debugLog('Admin user detected, showing admin section');
+        <script type="text/javascript">
+            (function () {
+                'use strict';
 
-                        // Load configuration for admin
-                        Dashboard.showLoadingMsg();
-                        ApiClient.getPluginConfiguration(GeminiSearchConfig.pluginUniqueId).then(function (config) {
-                            document.getElementById('txtGeminiApiKey').value = config.GeminiApiKey || '';
-                            document.getElementById('chkEnabled').checked = config.Enabled !== false; // Default to true
-                            Dashboard.hideLoadingMsg();
-                            debugLog('Configuration loaded', config);
-                        }).catch(function (error) {
-                            Dashboard.hideLoadingMsg();
-                            debugLog('Error loading config', error);
-                        });
-                    }
-                }).catch(function (error) {
-                    debugLog('Error getting current user', error);
-                });
-
-                // Focus search input
-                setTimeout(function () {
-                    document.getElementById('txtSearchQuery').focus();
-                    debugLog('Search input focused');
-                }, 100);
-            });
-
-            // Admin configuration form
-            document.getElementById('GeminiSearchConfigForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-                debugLog('Config form submitted');
-                Dashboard.showLoadingMsg();
-
-                ApiClient.getPluginConfiguration(GeminiSearchConfig.pluginUniqueId).then(function (config) {
-                    config.GeminiApiKey = document.getElementById('txtGeminiApiKey').value;
-                    config.Enabled = document.getElementById('chkEnabled').checked;
-
-                    debugLog('Saving config', config);
-                    ApiClient.updatePluginConfiguration(GeminiSearchConfig.pluginUniqueId, config).then(function () {
-                        Dashboard.processPluginConfigurationUpdateResult();
-                        debugLog('Config saved successfully');
-                    }).catch(function (error) {
-                        Dashboard.hideLoadingMsg();
-                        debugLog('Error saving config', error);
-                    });
-                }).catch(function (error) {
-                    Dashboard.hideLoadingMsg();
-                    debugLog('Error getting config for save', error);
-                });
-            });
-
-            // Search functionality
-            document.getElementById('txtSearchQuery').addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    debugLog('Enter key pressed, triggering search');
-                    performSearch();
-                }
-            });
-
-            document.getElementById('btnSearch').addEventListener('click', function () {
-                debugLog('Search button clicked');
-                performSearch();
-            });
-
-            function performSearch() {
-                var query = document.getElementById('txtSearchQuery').value.trim();
-                debugLog('performSearch called with query', query);
-
-                if (!query) {
-                    debugLog('Empty query, showing alert');
-                    Dashboard.alert('Please enter a search query');
-                    return;
-                }
-
-                debugLog('Starting search process');
-                document.getElementById('searchLoading').style.display = 'block';
-                document.getElementById('searchResults').innerHTML = '';
-                document.getElementById('btnSearch').disabled = true;
-
-                var searchUrl = ApiClient.getUrl('Plugins/GeminiSearch/search?query=' + encodeURIComponent(query));
-                debugLog('Search URL constructed', searchUrl);
-
-                // FUCK ApiClient - use raw fetch with auth headers
-                var headers = {
-                    'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
+                var GeminiSearchConfig = {
+                    pluginUniqueId: "a4df60c5-6ab4-412a-8f79-2cab93fb2bc5"
                 };
 
-                fetch(searchUrl, { headers: headers })
-                    .then(response => {
-                        console.log('Fetch response status:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Fetch data received:', data);
+                var currentSearchResults = [];
 
-                        document.getElementById('searchLoading').style.display = 'none';
-                        document.getElementById('btnSearch').disabled = false;
+                // Debug logging function
+                function debugLog(message, data) {
+                    console.log('[AI Search Debug]', message, data || '');
+                    var debugDiv = document.getElementById('debugInfo');
+                    if (debugDiv && debugDiv.style.display !== 'none') {
+                        debugDiv.innerHTML += '<br>• ' + message + (data ? ': ' + JSON.stringify(data, null, 2) : '');
+                    }
+                }
 
-                        // DISPLAY THE FUCKING RESULTS
-                        var container = document.getElementById('searchResults');
-                        var html = '<h2>Results for "' + (data.Query || 'your search') + '"</h2>';
+                // Initialize the page when DOM is ready - using multiple approaches for maximum compatibility
+                function initializePage() {
+                    debugLog('Initializing page');
 
-                        if (data && data.Results && data.Results.length > 0) {
-                            html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">';
+                    if (document.getElementById('loadTime')) {
+                        document.getElementById('loadTime').textContent = new Date().toLocaleTimeString();
+                    }
 
-                            for (var i = 0; i < data.Results.length; i++) {
-                                var result = data.Results[i];
-                                var statusColor = result.InLibrary ? '#00a4dc' : '#cc7b19';
-                                var statusText = result.InLibrary ? '✅ In Your Library' : '📥 Not in Library';
-                                var mediaIcon = result.Type === 'movie' ? '🎬' : '📺';
-
-                                // Better type display with icons
-                                var typeDisplay = result.Type === 'movie' ? '🎬 Movie' : '📺 TV Show';
-
-                                html += '<div style="border: 1px solid #444; margin: 10px; padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.05);">';
-                                html += '<div style="display: flex; align-items: center; margin-bottom: 10px;">';
-                                html += '  <span style="font-size: 24px; margin-right: 10px;">' + mediaIcon + '</span>';
-                                html += '  <div>';
-                                html += '    <h3 style="margin: 0; font-size: 18px; font-weight: bold;">' + result.Title + '</h3>';
-                                html += '    <p style="margin: 2px 0; color: #aaa; font-size: 14px;">' + result.Year + ' • ' + typeDisplay + '</p>';
-                                html += '  </div>';
-                                html += '</div>';
-                                html += '<p style="margin: 10px 0; line-height: 1.4; color: #ccc;">' + result.Description + '</p>';
-                                html += '<div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between;">';
-                                html += '  <span style="color: ' + statusColor + '; font-weight: bold; font-size: 14px;">' + statusText + '</span>';
-
-                                if (result.InLibrary && result.JellyfinId) {
-                                    // Instead of broken navigation, use search functionality
-                                    html += '  <div style="display: flex; gap: 8px;">';
-                                    html += '    <button onclick="searchForTitle(\'' + result.Title.replace(/'/g, "\\'") + '\');" style="background: #00a4dc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">🔍 Search in Library</button>';
-                                    html += '    <button onclick="copyItemInfo(\'' + result.Title.replace(/'/g, "\\'") + '\', \'' + result.JellyfinId + '\');" style="background: #666; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;" title="Copy Info">📋</button>';
-                                    html += '  </div>';
+                    // Check if user is admin to show config section
+                    if (typeof Dashboard !== 'undefined' && Dashboard.getCurrentUser) {
+                        Dashboard.getCurrentUser().then(function (user) {
+                            debugLog('Got current user', user ? user.Name : 'null');
+                            if (user && user.Policy && user.Policy.IsAdministrator) {
+                                var adminSection = document.getElementById('adminSection');
+                                if (adminSection) {
+                                    adminSection.style.display = 'block';
+                                    debugLog('Admin user detected, showing admin section');
                                 }
-                                html += '</div>';
-                                html += '</div>';
-                            }
-                            html += '</div>';
 
-                            // Summary
-                            var inLibraryCount = data.Results.filter(function (r) { return r.InLibrary; }).length;
-                            html += '<div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">';
-                            html += '<p style="margin: 0;">Found <strong>' + data.Results.length + '</strong> recommendations • <strong>' + inLibraryCount + '</strong> already in your library</p>';
-                            html += '</div>';
+                                // Load configuration for admin
+                                if (typeof ApiClient !== 'undefined') {
+                                    Dashboard.showLoadingMsg();
+                                    ApiClient.getPluginConfiguration(GeminiSearchConfig.pluginUniqueId).then(function (config) {
+                                        var apiKeyInput = document.getElementById('txtGeminiApiKey');
+                                        var enabledCheckbox = document.getElementById('chkEnabled');
+
+                                        if (apiKeyInput) apiKeyInput.value = config.GeminiApiKey || '';
+                                        if (enabledCheckbox) enabledCheckbox.checked = config.Enabled !== false; // Default to true
+
+                                        Dashboard.hideLoadingMsg();
+                                        debugLog('Configuration loaded', config);
+                                    }).catch(function (error) {
+                                        Dashboard.hideLoadingMsg();
+                                        debugLog('Error loading config', error);
+                                    });
+                                }
+                            } else {
+                                debugLog('User is not admin or policy missing');
+                            }
+                        }).catch(function (error) {
+                            debugLog('Error getting current user', error);
+                        });
+                    } else {
+                        debugLog('Dashboard or getCurrentUser not available');
+                    }
+
+                    // Focus search input
+                    setTimeout(function () {
+                        var searchInput = document.getElementById('txtSearchQuery');
+                        if (searchInput) {
+                            searchInput.focus();
+                            debugLog('Search input focused');
+                        }
+                    }, 100);
+
+                    // Setup all navigation functions globally - critical for accessibility
+                    setupGlobalFunctions();
+
+                    // Setup event listeners
+                    setupEventListeners();
+                }
+
+                // Setup all functions globally - this is the key fix based on working plugin examples
+                function setupGlobalFunctions() {
+                    debugLog('Setting up global functions');
+
+                    // Global navigation function - using the correct Jellyfin route
+                    window.navigateToItem = function (itemId, autoplay) {
+                        debugLog('Navigating to item:', { itemId: itemId, autoplay: autoplay });
+
+                        try {
+                            // Method 1: Use Dashboard.navigate with correct route from manual testing
+                            if (typeof Dashboard !== 'undefined' && Dashboard.navigate) {
+                                if (autoplay) {
+                                    Dashboard.navigate('details?id=' + itemId + '&autoplay=true');
+                                } else {
+                                    Dashboard.navigate('details?id=' + itemId);
+                                }
+                                debugLog('Used Dashboard.navigate with details?id=');
+                                return;
+                            }
+
+                            // Method 2: Direct hash navigation (fallback)
+                            if (autoplay) {
+                                window.location.hash = '#!/details?id=' + itemId + '&autoplay=true';
+                            } else {
+                                window.location.hash = '#!/details?id=' + itemId;
+                            }
+                            debugLog('Used hash navigation fallback');
+
+                        } catch (error) {
+                            debugLog('Navigation error:', error);
+                            alert('Unable to navigate to item: ' + error.message);
+                        }
+                    };
+
+                    // Search function using proper Jellyfin patterns
+                    window.searchForTitle = function (title) {
+                        debugLog('Searching for title:', title);
+                        try {
+                            // Method 1: Use Dashboard.navigate (restore what worked)
+                            if (typeof Dashboard !== 'undefined' && Dashboard.navigate) {
+                                Dashboard.navigate('search.html?query=' + encodeURIComponent(title));
+                                debugLog('Used Dashboard.navigate for search');
+                                return;
+                            }
+
+                            // Method 2: Direct hash navigation (fallback)
+                            window.location.hash = '#!/search?query=' + encodeURIComponent(title);
+                            debugLog('Used hash navigation for search fallback');
+
+                        } catch (error) {
+                            debugLog('Search navigation error:', error);
+                            alert('Search failed. Try searching manually for: "' + title + '"');
+                        }
+                    };
+
+                    // Playlist Functions
+                    window.addToPlaylist = function (itemId, itemTitle) {
+                        debugLog('Adding to playlist:', { itemId: itemId, itemTitle: itemTitle });
+                        showPlaylistModal([itemId], itemTitle ? 'Add "' + itemTitle + '" to Playlist' : 'Add to Playlist');
+                    };
+
+                    window.addAllToPlaylist = function () {
+                        var inLibraryItems = currentSearchResults.filter(function (r) { return r.InLibrary && r.JellyfinId; });
+                        var itemIds = inLibraryItems.map(function (r) { return r.JellyfinId; });
+
+                        if (itemIds.length === 0) {
+                            if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                Dashboard.alert('No items in library to add to playlist');
+                            } else {
+                                alert('No items in library to add to playlist');
+                            }
+                            return;
+                        }
+
+                        debugLog('Adding all to playlist:', itemIds);
+                        showPlaylistModal(itemIds, 'Add ' + itemIds.length + ' items to Playlist');
+                    };
+
+                    window.showPlaylistModal = showPlaylistModal;
+                    window.closePlaylistModal = closePlaylistModal;
+                    window.addItemsToPlaylist = addItemsToPlaylist;
+                    window.createNewPlaylist = createNewPlaylist;
+
+                    window.viewItem = function (itemId) {
+                        debugLog('Viewing item:', itemId);
+                        window.navigateToItem(itemId, false);
+                    };
+
+                    window.playItem = function (itemId) {
+                        debugLog('Playing item:', itemId);
+                        window.navigateToItem(itemId, true);
+                    };
+
+                    window.viewAllInLibrary = function () {
+                        var inLibraryItems = currentSearchResults.filter(function (r) { return r.InLibrary && r.JellyfinId; });
+
+                        if (inLibraryItems.length === 0) {
+                            if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                Dashboard.alert('No items in library to view');
+                            } else {
+                                alert('No items in library to view');
+                            }
+                            return;
+                        }
+
+                        // Create a quick playlist to view all items
+                        var titles = inLibraryItems.map(function (item) { return item.Title; }).join(', ');
+
+                        if (confirm('Open item details for all ' + inLibraryItems.length + ' items in your library?\n\nItems: ' + titles.substring(0, 200) + (titles.length > 200 ? '...' : ''))) {
+                            // Open first item immediately
+                            if (inLibraryItems[0]) {
+                                window.viewItem(inLibraryItems[0].JellyfinId);
+                            }
+
+                            // Optional: Show a list of all items
+                            setTimeout(function () {
+                                var itemList = 'All items in your library from this search:\n\n';
+                                for (var i = 0; i < inLibraryItems.length; i++) {
+                                    itemList += '• ' + inLibraryItems[i].Title + ' (' + inLibraryItems[i].Year + ')\n';
+                                }
+                                alert(itemList);
+                            }, 1000);
+                        }
+                    };
+
+                    debugLog('All global functions setup complete');
+                }
+
+                function setupEventListeners() {
+                    // Admin configuration form
+                    var configForm = document.getElementById('GeminiSearchConfigForm');
+                    if (configForm) {
+                        configForm.addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            debugLog('Config form submitted');
+
+                            if (typeof Dashboard !== 'undefined' && typeof ApiClient !== 'undefined') {
+                                Dashboard.showLoadingMsg();
+
+                                ApiClient.getPluginConfiguration(GeminiSearchConfig.pluginUniqueId).then(function (config) {
+                                    var apiKeyInput = document.getElementById('txtGeminiApiKey');
+                                    var enabledCheckbox = document.getElementById('chkEnabled');
+
+                                    config.GeminiApiKey = apiKeyInput ? apiKeyInput.value : '';
+                                    config.Enabled = enabledCheckbox ? enabledCheckbox.checked : false;
+
+                                    debugLog('Saving config', config);
+                                    ApiClient.updatePluginConfiguration(GeminiSearchConfig.pluginUniqueId, config).then(function () {
+                                        Dashboard.processPluginConfigurationUpdateResult();
+                                        debugLog('Config saved successfully');
+                                    }).catch(function (error) {
+                                        Dashboard.hideLoadingMsg();
+                                        debugLog('Error saving config', error);
+                                    });
+                                }).catch(function (error) {
+                                    Dashboard.hideLoadingMsg();
+                                    debugLog('Error getting config for save', error);
+                                });
+                            }
+                        });
+                    }
+
+                    // Search functionality
+                    var searchInput = document.getElementById('txtSearchQuery');
+                    if (searchInput) {
+                        searchInput.addEventListener('keypress', function (e) {
+                            if (e.key === 'Enter') {
+                                debugLog('Enter key pressed, triggering search');
+                                performSearch();
+                            }
+                        });
+                    }
+
+                    var searchButton = document.getElementById('btnSearch');
+                    if (searchButton) {
+                        searchButton.addEventListener('click', function () {
+                            debugLog('Search button clicked');
+                            performSearch();
+                        });
+                    }
+                }
+
+                function performSearch() {
+                    var searchInput = document.getElementById('txtSearchQuery');
+                    var query = searchInput ? searchInput.value.trim() : '';
+                    debugLog('performSearch called with query', query);
+
+                    if (!query) {
+                        debugLog('Empty query, showing alert');
+                        if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                            Dashboard.alert('Please enter a search query');
                         } else {
-                            html += '<div style="text-align: center; padding: 40px; color: #aaa;">';
-                            html += '<p style="font-size: 18px; margin-bottom: 10px;">🤔 No results found</p>';
-                            html += '<p>Try a different search query.</p>';
+                            alert('Please enter a search query');
+                        }
+                        return;
+                    }
+
+                    debugLog('Starting search process');
+                    var loadingDiv = document.getElementById('searchLoading');
+                    var resultsDiv = document.getElementById('searchResults');
+                    var searchBtn = document.getElementById('btnSearch');
+
+                    if (loadingDiv) loadingDiv.style.display = 'block';
+                    if (resultsDiv) resultsDiv.innerHTML = '';
+                    if (searchBtn) searchBtn.disabled = true;
+
+                    if (typeof ApiClient !== 'undefined') {
+                        var searchUrl = ApiClient.getUrl('Plugins/GeminiSearch/search?query=' + encodeURIComponent(query));
+                        debugLog('Search URL constructed', searchUrl);
+
+                        var headers = {
+                            'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
+                        };
+
+                        fetch(searchUrl, { headers: headers })
+                            .then(response => {
+                                debugLog('Fetch response status:', response.status);
+                                return response.json();
+                            })
+                            .then(data => {
+                                debugLog('Fetch data received:', data);
+                                currentSearchResults = data.Results || [];
+
+                                if (loadingDiv) loadingDiv.style.display = 'none';
+                                if (searchBtn) searchBtn.disabled = false;
+
+                                displayResults(data);
+                            })
+                            .catch(error => {
+                                debugLog('Fetch error:', error);
+                                if (loadingDiv) loadingDiv.style.display = 'none';
+                                if (searchBtn) searchBtn.disabled = false;
+
+                                if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                    Dashboard.alert('Search failed: ' + error.message);
+                                } else {
+                                    alert('Search failed: ' + error.message);
+                                }
+                            });
+                    } else {
+                        debugLog('ApiClient not available');
+                        if (loadingDiv) loadingDiv.style.display = 'none';
+                        if (searchBtn) searchBtn.disabled = false;
+                    }
+                }
+
+                function displayResults(data) {
+                    var container = document.getElementById('searchResults');
+                    if (!container) return;
+
+                    var html = '<h2>Results for "' + (data.Query || 'your search') + '"</h2>';
+
+                    if (data && data.Results && data.Results.length > 0) {
+                        // Add bulk actions for items in library
+                        var inLibraryItems = data.Results.filter(function (r) { return r.InLibrary; });
+                        if (inLibraryItems.length > 0) {
+                            html += '<div style="margin-bottom: 20px; padding: 15px; background: rgba(0,164,220,0.1); border-radius: 8px; border: 1px solid #00a4dc;">';
+                            html += '<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">';
+                            html += '<span style="font-weight: bold; color: #00a4dc;">📝 Bulk Actions (' + inLibraryItems.length + ' items in library)</span>';
+                            html += '<div style="display: flex; gap: 10px; flex-wrap: wrap;">';
+                            html += '<button onclick="addAllToPlaylist()" style="background: #00a4dc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">📝 Add All to Playlist</button>';
+                            html += '<button onclick="viewAllInLibrary()" style="background: #52b54b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">👁️ View All in Library</button>';
+                            html += '</div>';
+                            html += '</div>';
                             html += '</div>';
                         }
 
-                        container.innerHTML = html;
-                        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">';
 
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                        document.getElementById('searchLoading').style.display = 'none';
-                        document.getElementById('btnSearch').disabled = false;
-                        Dashboard.alert('Search failed: ' + error.message);
-                    });
-            }
-
-            function displaySearchResults(response) {
-                console.log('FORCE DISPLAY - Raw response:', response);
-
-                var container = document.getElementById('searchResults');
-                if (!container) {
-                    console.error('Container not found!');
-                    return;
-                }
-
-                // JUST FUCKING DISPLAY IT
-                var html = '<h2>FORCED RESULTS DISPLAY</h2>';
-                html += '<pre style="background: #222; padding: 10px; color: #0f0; overflow: auto;">';
-                html += JSON.stringify(response, null, 2);
-                html += '</pre>';
-
-                // TRY TO DISPLAY RESULTS ANYWAY
-                try {
-                    if (response.Results) {
-                        html += '<h3>Parsed Results:</h3>';
-                        html += '<div class="itemsContainer">';
-
-                        for (var i = 0; i < response.Results.length; i++) {
-                            var result = response.Results[i];
+                        for (var i = 0; i < data.Results.length; i++) {
+                            var result = data.Results[i];
                             var statusColor = result.InLibrary ? '#00a4dc' : '#cc7b19';
                             var statusText = result.InLibrary ? '✅ In Your Library' : '📥 Not in Library';
                             var mediaIcon = result.Type === 'movie' ? '🎬' : '📺';
+                            var typeDisplay = result.Type === 'movie' ? '🎬 Movie' : '📺 TV Show';
 
                             html += '<div style="border: 1px solid #444; margin: 10px; padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.05);">';
-                            html += '<h4>' + mediaIcon + ' ' + result.Title + ' (' + result.Year + ')</h4>';
-                            html += '<p><strong>Type:</strong> ' + result.Type + '</p>';
-                            html += '<p><strong>Description:</strong> ' + result.Description + '</p>';
-                            html += '<p style="color: ' + statusColor + '; font-weight: bold;">' + statusText + '</p>';
+                            html += '<div style="display: flex; align-items: center; margin-bottom: 10px;">';
+                            html += '  <span style="font-size: 24px; margin-right: 10px;">' + mediaIcon + '</span>';
+                            html += '  <div>';
+                            html += '    <h3 style="margin: 0; font-size: 18px; font-weight: bold;">' + escapeHtml(result.Title) + '</h3>';
+                            html += '    <p style="margin: 2px 0; color: #aaa; font-size: 14px;">' + result.Year + ' • ' + typeDisplay + '</p>';
+                            html += '  </div>';
+                            html += '</div>';
+                            html += '<p style="margin: 10px 0; line-height: 1.4; color: #ccc;">' + escapeHtml(result.Description) + '</p>';
+                            html += '<div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">';
+                            html += '  <span style="color: ' + statusColor + '; font-weight: bold; font-size: 14px;">' + statusText + '</span>';
 
                             if (result.InLibrary && result.JellyfinId) {
-                                html += '<button onclick="Dashboard.navigate(\'itemdetails.html?id=' + result.JellyfinId + '\');" style="background: #00a4dc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">View in Library</button>';
+                                html += '  <div style="display: flex; gap: 6px; flex-wrap: wrap;">';
+                                html += '    <button onclick="addToPlaylist(\'' + escapeHtml(result.JellyfinId) + '\', \'' + escapeHtml(result.Title) + '\');" style="background: #00a4dc; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">📝 Add to Playlist</button>';
+                                html += '    <button onclick="searchForTitle(\'' + escapeHtml(result.Title) + '\');" style="background: #52b54b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🔍 Find in Library</button>';
+                                html += '    <button onclick="viewItem(\'' + escapeHtml(result.JellyfinId) + '\');" style="background: #666; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">👁️ View Details</button>';
+                                html += '  </div>';
+                            } else {
+                                // For items not in library, just show a search button to help find similar items
+                                html += '  <div style="display: flex; gap: 6px; flex-wrap: wrap;">';
+                                html += '    <button onclick="searchForTitle(\'' + escapeHtml(result.Title) + '\');" style="background: #cc7b19; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🔍 Search for Similar</button>';
+                                html += '  </div>';
                             }
+                            html += '</div>';
                             html += '</div>';
                         }
                         html += '</div>';
+
+                        // Summary
+                        var inLibraryCount = data.Results.filter(function (r) { return r.InLibrary; }).length;
+                        html += '<div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">';
+                        html += '<p style="margin: 0;">Found <strong>' + data.Results.length + '</strong> recommendations • <strong>' + inLibraryCount + '</strong> already in your library</p>';
+                        html += '</div>';
+                    } else {
+                        html += '<div style="text-align: center; padding: 40px; color: #aaa;">';
+                        html += '<p style="font-size: 18px; margin-bottom: 10px;">🤔 No results found</p>';
+                        html += '<p>Try a different search query.</p>';
+                        html += '</div>';
                     }
-                } catch (e) {
-                    html += '<p style="color: red;">Error parsing results: ' + e.message + '</p>';
+
+                    container.innerHTML = html;
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
 
-                container.innerHTML = html;
-                console.log('FORCED DISPLAY COMPLETE');
-            }
+                function escapeHtml(text) {
+                    if (!text) return '';
+                    var div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                }
 
-            // Add custom styles
-            var style = document.createElement('style');
-            style.textContent = `
-                        .loading-spinner {
-                            border: 3px solid rgba(255,255,255,0.3);
-                            border-top: 3px solid #00a4dc;
-                            border-radius: 50%;
-                            width: 30px;
-                            height: 30px;
-                            animation: spin 1s linear infinite;
-                            margin: 0 auto;
-                        }
-                        @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                        }
-                        .itemsContainer {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                            gap: 15px;
-                        }
-                        @media (max-width: 768px) {
-                            .itemsContainer {
-                                grid-template-columns: 1fr;
-                            }
-                        }
-                    `;
-            document.head.appendChild(style);
+                function showPlaylistModal(itemIds, title) {
+                    var modal = document.getElementById('playlistModal');
+                    var titleElement = document.querySelector('#playlistModal h3');
 
-            debugLog('Page script fully loaded and initialized');
+                    if (modal) modal.style.display = 'block';
+                    if (titleElement) titleElement.textContent = title || 'Select Playlist';
 
-            // Helper function to search for content in Jellyfin
-            function searchForTitle(title) {
-                console.log('Searching for title:', title);
+                    // Store the items to add
+                    window.pendingPlaylistItems = itemIds;
 
-                try {
-                    // Method 1: Try the most common search URL format
-                    var searchUrl = '#!/search?query=' + encodeURIComponent(title);
-                    console.log('Navigating to search:', searchUrl);
+                    // Load user's playlists
+                    loadUserPlaylists();
+                }
 
-                    // Navigate first
-                    window.location.hash = searchUrl;
+                function closePlaylistModal() {
+                    var modal = document.getElementById('playlistModal');
+                    if (modal) modal.style.display = 'none';
+                    window.pendingPlaylistItems = null;
+                }
 
-                    // Give it a moment to load, then try to trigger the search
-                    setTimeout(function () {
-                        console.log('Checking if search loaded properly...');
+                function loadUserPlaylists() {
+                    var playlistContainer = document.getElementById('playlistList');
+                    if (!playlistContainer) return;
 
-                        // Try to find the search input and fill it
-                        var searchInput = document.querySelector('input[type="search"]') ||
-                            document.querySelector('input[placeholder*="search"]') ||
-                            document.querySelector('.searchInput') ||
-                            document.querySelector('#txtSearch');
+                    playlistContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Loading playlists...</div>';
 
-                        if (searchInput) {
-                            console.log('Found search input, filling with:', title);
-                            searchInput.value = title;
-                            searchInput.focus();
+                    if (typeof ApiClient !== 'undefined') {
+                        var headers = {
+                            'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
+                        };
 
-                            // Try to trigger the search
-                            var event = new Event('input', { bubbles: true });
-                            searchInput.dispatchEvent(event);
+                        // Get user's playlists
+                        var playlistUrl = ApiClient.getUrl('Items', {
+                            IncludeItemTypes: 'Playlist',
+                            Recursive: true,
+                            UserId: ApiClient.getCurrentUserId()
+                        });
 
-                            // Also try Enter key
-                            setTimeout(function () {
-                                var enterEvent = new KeyboardEvent('keypress', {
-                                    key: 'Enter',
-                                    keyCode: 13,
-                                    which: 13,
-                                    bubbles: true
-                                });
-                                searchInput.dispatchEvent(enterEvent);
-                            }, 100);
+                        fetch(playlistUrl, { headers: headers })
+                            .then(response => response.json())
+                            .then(data => {
+                                var html = '';
+
+                                if (data.Items && data.Items.length > 0) {
+                                    for (var i = 0; i < data.Items.length; i++) {
+                                        var playlist = data.Items[i];
+                                        html += '<div style="display: flex; align-items: center; padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.05); border-radius: 4px; cursor: pointer;" onclick="addItemsToPlaylist(\'' + escapeHtml(playlist.Id) + '\', \'' + escapeHtml(playlist.Name) + '\')">';
+                                        html += '<span style="margin-right: 10px;">📝</span>';
+                                        html += '<div style="flex: 1;">';
+                                        html += '<div style="font-weight: bold;">' + escapeHtml(playlist.Name) + '</div>';
+                                        if (playlist.ChildCount) {
+                                            html += '<div style="font-size: 12px; color: #aaa;">' + playlist.ChildCount + ' items</div>';
+                                        }
+                                        html += '</div>';
+                                        html += '<span style="color: #00a4dc;">→</span>';
+                                        html += '</div>';
+                                    }
+                                } else {
+                                    html = '<div style="text-align: center; padding: 20px; color: #aaa;">No playlists found. Create one first!</div>';
+                                }
+
+                                playlistContainer.innerHTML = html;
+                            })
+                            .catch(error => {
+                                debugLog('Error loading playlists:', error);
+                                playlistContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">Error loading playlists</div>';
+                            });
+                    }
+                }
+
+                function addItemsToPlaylist(playlistId, playlistName) {
+                    if (!window.pendingPlaylistItems || window.pendingPlaylistItems.length === 0) {
+                        if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                            Dashboard.alert('No items to add');
                         } else {
-                            console.log('No search input found, trying alternative navigation');
-                            // Try alternative URL format
-                            window.location.hash = '#!/search.html?query=' + encodeURIComponent(title);
+                            alert('No items to add');
                         }
-                    }, 500);
+                        return;
+                    }
 
-                } catch (error) {
-                    console.error('Search navigation error:', error);
-                    alert('Search failed. Try searching manually for: "' + title + '"');
+                    debugLog('Adding items to playlist:', { playlistId: playlistId, items: window.pendingPlaylistItems });
+
+                    if (typeof ApiClient !== 'undefined') {
+                        var headers = {
+                            'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"',
+                            'Content-Type': 'application/json'
+                        };
+
+                        // Use the correct Jellyfin API endpoint for adding items to playlist
+                        var addUrl = ApiClient.getUrl('Playlists/' + playlistId + '/Items', {
+                            UserId: ApiClient.getCurrentUserId(),
+                            Ids: window.pendingPlaylistItems.join(',')
+                        });
+
+                        debugLog('Add to playlist URL:', addUrl);
+
+                        // Try POST method first (newer API)
+                        fetch(addUrl, {
+                            method: 'POST',
+                            headers: headers
+                        })
+                            .then(response => {
+                                debugLog('Add to playlist response status:', response.status);
+                                if (response.ok) {
+                                    if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                        Dashboard.alert('Successfully added ' + window.pendingPlaylistItems.length + ' item(s) to "' + playlistName + '"');
+                                    } else {
+                                        alert('Successfully added ' + window.pendingPlaylistItems.length + ' item(s) to "' + playlistName + '"');
+                                    }
+                                    closePlaylistModal();
+                                    return;
+                                }
+
+                                // If POST fails, try the alternative method
+                                return tryAlternativePlaylistAdd(playlistId, playlistName);
+                            })
+                            .catch(error => {
+                                debugLog('Error adding to playlist with POST:', error);
+                                // Try alternative method on error
+                                tryAlternativePlaylistAdd(playlistId, playlistName);
+                            });
+                    }
                 }
-            }
 
-            // Helper function to copy item information
-            function copyItemInfo(title, itemId) {
-                var info = 'Title: ' + title + '\nItem ID: ' + itemId;
-                navigator.clipboard.writeText(info).then(function () {
-                    alert('Copied to clipboard:\n' + info);
-                }).catch(function () {
-                    alert('Item Info:\n' + info + '\n\nCopy this to search manually in your library.');
-                });
-            }
+                function tryAlternativePlaylistAdd(playlistId, playlistName) {
+                    debugLog('Trying alternative playlist add method');
 
-            // Make functions globally available
-            window.searchForTitle = searchForTitle;
-            window.copyItemInfo = copyItemInfo;
+                    if (typeof ApiClient !== 'undefined') {
+                        var headers = {
+                            'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
+                        };
+
+                        // Alternative: Add items one by one
+                        var promises = window.pendingPlaylistItems.map(function (itemId) {
+                            var url = ApiClient.getUrl('Playlists/' + playlistId + '/Items/' + itemId, {
+                                UserId: ApiClient.getCurrentUserId()
+                            });
+
+                            return fetch(url, {
+                                method: 'POST',
+                                headers: headers
+                            });
+                        });
+
+                        Promise.all(promises)
+                            .then(responses => {
+                                var successCount = responses.filter(r => r.ok).length;
+                                if (successCount > 0) {
+                                    if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                        Dashboard.alert('Successfully added ' + successCount + ' of ' + window.pendingPlaylistItems.length + ' item(s) to "' + playlistName + '"');
+                                    } else {
+                                        alert('Successfully added ' + successCount + ' of ' + window.pendingPlaylistItems.length + ' item(s) to "' + playlistName + '"');
+                                    }
+                                    closePlaylistModal();
+                                } else {
+                                    throw new Error('All items failed to add');
+                                }
+                            })
+                            .catch(error => {
+                                debugLog('Error with alternative playlist add:', error);
+
+                                // Final fallback: Try using Jellyfin's built-in method
+                                if (window.PlaylistManager) {
+                                    window.PlaylistManager.addToPlaylist(playlistId, window.pendingPlaylistItems)
+                                        .then(() => {
+                                            if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                                Dashboard.alert('Successfully added items to "' + playlistName + '"');
+                                            } else {
+                                                alert('Successfully added items to "' + playlistName + '"');
+                                            }
+                                            closePlaylistModal();
+                                        })
+                                        .catch(err => {
+                                            debugLog('PlaylistManager failed:', err);
+                                            if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                                Dashboard.alert('Failed to add items to playlist. The playlist API might have changed.');
+                                            } else {
+                                                alert('Failed to add items to playlist. The playlist API might have changed.');
+                                            }
+                                        });
+                                } else {
+                                    if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                        Dashboard.alert('Failed to add items to playlist: ' + error.message);
+                                    } else {
+                                        alert('Failed to add items to playlist: ' + error.message);
+                                    }
+                                }
+                            });
+                    }
+                }
+
+                function createNewPlaylist() {
+                    var playlistName = prompt('Enter playlist name:');
+                    if (!playlistName) return;
+
+                    if (typeof ApiClient !== 'undefined') {
+                        var headers = {
+                            'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"',
+                            'Content-Type': 'application/json'
+                        };
+
+                        var createUrl = ApiClient.getUrl('Playlists', {
+                            UserId: ApiClient.getCurrentUserId()
+                        });
+
+                        debugLog('Creating playlist with URL:', createUrl);
+
+                        var requestBody = {
+                            Name: playlistName,
+                            MediaType: 'Video'
+                        };
+
+                        // Include items if we have them
+                        if (window.pendingPlaylistItems && window.pendingPlaylistItems.length > 0) {
+                            requestBody.Ids = window.pendingPlaylistItems;
+                        }
+
+                        debugLog('Creating playlist with body:', requestBody);
+
+                        fetch(createUrl, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(requestBody)
+                        })
+                            .then(response => {
+                                debugLog('Create playlist response status:', response.status);
+                                return response.json();
+                            })
+                            .then(data => {
+                                debugLog('Create playlist response data:', data);
+                                if (data.Id) {
+                                    if (window.pendingPlaylistItems && window.pendingPlaylistItems.length > 0) {
+                                        // Items were included in creation, we're done
+                                        if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                            Dashboard.alert('Playlist "' + playlistName + '" created with ' + window.pendingPlaylistItems.length + ' items!');
+                                        } else {
+                                            alert('Playlist "' + playlistName + '" created with ' + window.pendingPlaylistItems.length + ' items!');
+                                        }
+                                        closePlaylistModal();
+                                    } else {
+                                        if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                            Dashboard.alert('Playlist "' + playlistName + '" created successfully!');
+                                        } else {
+                                            alert('Playlist "' + playlistName + '" created successfully!');
+                                        }
+                                        closePlaylistModal();
+                                    }
+                                } else {
+                                    throw new Error('Invalid response - no ID returned');
+                                }
+                            })
+                            .catch(error => {
+                                debugLog('Error creating playlist:', error);
+                                if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
+                                    Dashboard.alert('Failed to create playlist: ' + error.message);
+                                } else {
+                                    alert('Failed to create playlist: ' + error.message);
+                                }
+                            });
+                    }
+                }
+
+                // DOM ready pattern from working plugins
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initializePage);
+                } else {
+                    // DOM already loaded
+                    initializePage();
+                }
+
+                // Also use the pageshow event as in original code
+                var pageElement = document.getElementById('GeminiSearchPage');
+                if (pageElement) {
+                    pageElement.addEventListener('pageshow', function () {
+                        debugLog('Page show event fired');
+                        // Re-initialize if needed
+                        if (!window.viewItem) {
+                            setupGlobalFunctions();
+                        }
+                    });
+
+                    // Clean up when leaving the page
+                    pageElement.addEventListener('pagehide', function () {
+                        debugLog('Page hide event fired - cleaning up');
+
+                        // Close any open modals
+                        var modal = document.getElementById('playlistModal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+
+                        // Clear any pending operations
+                        window.pendingPlaylistItems = null;
+                        currentSearchResults = [];
+
+                        debugLog('Page cleanup completed');
+                    });
+                }
+
+                debugLog('Page script fully loaded and initialized');
+            })();
         </script>
     </div>
 </body>

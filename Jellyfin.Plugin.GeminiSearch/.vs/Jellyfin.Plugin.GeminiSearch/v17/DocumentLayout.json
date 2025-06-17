@@ -1,34 +1,30 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\",
+  "WorkspaceRootPath": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\geminisearch\\jellyfin.plugin.geminisearch\\configuration\\adminconfigpage.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\jellyfin_ai_suggestions\\jellyfin.plugin.geminisearch\\configuration\\adminconfigpage.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:configuration\\adminconfigpage.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\geminisearch\\jellyfin.plugin.geminisearch\\plugin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\jellyfin_ai_suggestions\\jellyfin.plugin.geminisearch\\plugin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:plugin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\geminisearch\\jellyfin.plugin.geminisearch\\jellyfin.plugin.geminisearch.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:jellyfin.plugin.geminisearch.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\jellyfin_ai_suggestions\\jellyfin.plugin.geminisearch\\meta.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:meta.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\geminisearch\\jellyfin.plugin.geminisearch\\pluginconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:pluginconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\geminisearch\\jellyfin.plugin.geminisearch\\configuration\\searchpage.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:configuration\\searchpage.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\geminisearch\\jellyfin.plugin.geminisearch\\controllers\\geminicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\jellyfin_ai_suggestions\\jellyfin.plugin.geminisearch\\controllers\\geminicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:controllers\\geminicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\geminisearch\\jellyfin.plugin.geminisearch\\meta.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:meta.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\jellyfin_ai_suggestions\\jellyfin.plugin.geminisearch\\jellyfin.plugin.geminisearch.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:jellyfin.plugin.geminisearch.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|c:\\repos\\jellyfin_ai_suggestions\\jellyfin.plugin.geminisearch\\pluginconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0A58570E-3990-4265-9619-DC83FD8B4131}|Jellyfin.Plugin.GeminiSearch.csproj|solutionrelative:pluginconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,41 +34,28 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "searchPage.html",
-              "DocumentMoniker": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Configuration\\searchPage.html",
-              "RelativeDocumentMoniker": "Configuration\\searchPage.html",
-              "ToolTip": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Configuration\\searchPage.html",
-              "RelativeToolTip": "Configuration\\searchPage.html",
-              "ViewState": "AgIAAKUAAAAAAAAAAAAcwOAAAAAiAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2025-06-09T01:18:55.49Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "adminConfigPage.html",
-              "DocumentMoniker": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Configuration\\adminConfigPage.html",
+              "DocumentMoniker": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Configuration\\adminConfigPage.html",
               "RelativeDocumentMoniker": "Configuration\\adminConfigPage.html",
-              "ToolTip": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Configuration\\adminConfigPage.html",
+              "ToolTip": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Configuration\\adminConfigPage.html",
               "RelativeToolTip": "Configuration\\adminConfigPage.html",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAACIDAAAAAAAAAAAcwEgDAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
               "WhenOpened": "2025-06-07T19:24:27.902Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 2,
               "Title": "meta.json",
-              "DocumentMoniker": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\meta.json",
+              "DocumentMoniker": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\meta.json",
               "RelativeDocumentMoniker": "meta.json",
-              "ToolTip": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\meta.json",
+              "ToolTip": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\meta.json",
               "RelativeToolTip": "meta.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
@@ -81,13 +64,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 3,
               "Title": "GeminiController.cs",
-              "DocumentMoniker": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Controllers\\GeminiController.cs",
+              "DocumentMoniker": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Controllers\\GeminiController.cs",
               "RelativeDocumentMoniker": "Controllers\\GeminiController.cs",
-              "ToolTip": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Controllers\\GeminiController.cs",
+              "ToolTip": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Controllers\\GeminiController.cs",
               "RelativeToolTip": "Controllers\\GeminiController.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAACIAAABlAAAAAAAAAA==",
+              "ViewState": "AgIAAFsBAAAAAAAAAAAowHwBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-07T19:22:44.497Z",
               "EditorCaption": ""
@@ -96,37 +79,37 @@
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "Plugin.cs",
-              "DocumentMoniker": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Plugin.cs",
+              "DocumentMoniker": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Plugin.cs",
               "RelativeDocumentMoniker": "Plugin.cs",
-              "ToolTip": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Plugin.cs",
+              "ToolTip": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Plugin.cs",
               "RelativeToolTip": "Plugin.cs",
-              "ViewState": "AgIAACAAAAAAAAAAAAAQwDQAAAA3AAAAAAAAAA==",
+              "ViewState": "AgIAABYAAAAAAAAAAAAgwC0AAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-07T19:21:19.321Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "PluginConfiguration.cs",
-              "DocumentMoniker": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\PluginConfiguration.cs",
+              "DocumentMoniker": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\PluginConfiguration.cs",
               "RelativeDocumentMoniker": "PluginConfiguration.cs",
-              "ToolTip": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\PluginConfiguration.cs",
+              "ToolTip": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\PluginConfiguration.cs",
               "RelativeToolTip": "PluginConfiguration.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAA8AAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-07T19:20:40.954Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Jellyfin.Plugin.GeminiSearch",
-              "DocumentMoniker": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Jellyfin.Plugin.GeminiSearch.csproj",
+              "DocumentIndex": 4,
+              "Title": "Jellyfin.Plugin.GeminiSearch.csproj",
+              "DocumentMoniker": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Jellyfin.Plugin.GeminiSearch.csproj",
               "RelativeDocumentMoniker": "Jellyfin.Plugin.GeminiSearch.csproj",
-              "ToolTip": "C:\\Repos\\GeminiSearch\\Jellyfin.Plugin.GeminiSearch\\Jellyfin.Plugin.GeminiSearch.csproj",
+              "ToolTip": "C:\\Repos\\jellyfin_ai_suggestions\\Jellyfin.Plugin.GeminiSearch\\Jellyfin.Plugin.GeminiSearch.csproj",
               "RelativeToolTip": "Jellyfin.Plugin.GeminiSearch.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
               "WhenOpened": "2025-06-07T19:20:01.181Z",
               "EditorCaption": ""

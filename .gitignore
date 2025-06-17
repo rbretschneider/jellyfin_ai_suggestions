@@ -481,3 +481,15 @@ packages/
 # Plugin zip files for distribution
 dist/
 *.plugin.zip
+Jellyfin.Plugin.GeminiSearch/.vs/Jellyfin.Plugin.GeminiSearch/v17/.suo
+Jellyfin.Plugin.GeminiSearch/.vs/Jellyfin.Plugin.GeminiSearch/v17/DocumentLayout.backup.json
+Jellyfin.Plugin.GeminiSearch/.vs/Jellyfin.Plugin.GeminiSearch/v17/DocumentLayout.json
+Jellyfin.Plugin.GeminiSearch/bin/Debug/net8.0/Jellyfin.Plugin.GeminiSearch.dll
+Jellyfin.Plugin.GeminiSearch/bin/Debug/net8.0/Jellyfin.Plugin.GeminiSearch.pdb
+Jellyfin.Plugin.GeminiSearch/obj/Debug/net8.0/Jellyfin.Plugin.GeminiSearch.AssemblyInfo.cs
+Jellyfin.Plugin.GeminiSearch/obj/Debug/net8.0/Jellyfin.Plugin.GeminiSearch.AssemblyInfoInputs.cache
+Jellyfin.Plugin.GeminiSearch/obj/Debug/net8.0/Jellyfin.Plugin.GeminiSearch.csproj.FileListAbsolute.txt
+Jellyfin.Plugin.GeminiSearch/obj/Debug/net8.0/Jellyfin.Plugin.GeminiSearch.dll
+Jellyfin.Plugin.GeminiSearch/obj/Debug/net8.0/Jellyfin.Plugin.GeminiSearch.pdb
+Jellyfin.Plugin.GeminiSearch/obj/Debug/net8.0/ref/Jellyfin.Plugin.GeminiSearch.dll
+Jellyfin.Plugin.GeminiSearch/obj/Debug/net8.0/refint/Jellyfin.Plugin.GeminiSearch.dll

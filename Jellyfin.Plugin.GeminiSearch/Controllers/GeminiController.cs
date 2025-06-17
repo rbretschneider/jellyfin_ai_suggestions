@@ -114,7 +114,7 @@ public class GeminiController : ControllerBase
                         {
                             new
                             {
-                                text = $@"Based on the query ""{query}"", recommend 10 movies and TV shows. Return ONLY a JSON array with objects containing ""title"", ""year"", ""type"" (""movie"" or ""tv""), and ""description"". No other text.
+                                text = $@"Based on the query ""{query}"", recommend movies or TV shows based on the query (a minimum of 25 results is expected, defer to the query for number of results desired). Return ONLY a JSON array with objects containing ""title"", ""year"", ""type"" (""movie"" or ""tv""), and ""description"". No other text.
 
 Example format:
 [

@@ -43,13 +43,16 @@ public class GeminiController : ControllerBase
     /// Search for movies and TV shows using Gemini AI.
     /// </summary>
     /// <param name="query">The search query.</param>
+    /// <param name="mediaType">The type of media to search for (movie, tv, or both).</param>
+    /// <param name="resultCount">The number of results to return.</param>
     /// <returns>Search results with library matching information.</returns>
     [HttpGet("search")]
-    public async Task<ActionResult<GeminiSearchResponse>> Search([FromQuery] string query)
+    public async Task<ActionResult<GeminiSearchResponse>> Search([FromQuery] string query, [FromQuery] string? mediaType = "both", [FromQuery] int resultCount = 25)
     {
         try
         {
-            _logger.LogInformation("Search endpoint hit. Raw query parameter: '{Query}'", query ?? "NULL");
+            _logger.LogInformation("Search endpoint hit. Raw query parameter: '{Query}', MediaType: '{MediaType}', ResultCount: {ResultCount}",
+                query ?? "NULL", mediaType ?? "NULL", resultCount);
 
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -57,7 +60,18 @@ public class GeminiController : ControllerBase
                 return BadRequest("Query cannot be empty");
             }
 
-            _logger.LogInformation("Gemini search request received for query: {Query}", query);
+            // Validate and sanitize parameters
+            mediaType = mediaType?.ToLower() ?? "both";
+            if (mediaType != "movie" && mediaType != "tv" && mediaType != "both")
+            {
+                mediaType = "both";
+            }
+
+            if (resultCount < 5) resultCount = 5;
+            if (resultCount > 50) resultCount = 50;
+
+            _logger.LogInformation("Gemini search request received for query: {Query}, MediaType: {MediaType}, ResultCount: {ResultCount}",
+                query, mediaType, resultCount);
 
             var config = Plugin.Instance?.PluginConfiguration;
             if (config == null)
@@ -75,7 +89,7 @@ public class GeminiController : ControllerBase
             _logger.LogInformation("Starting Gemini search with API key configured");
 
             // Get Gemini recommendations
-            var geminiResults = await GetGeminiRecommendations(query, config.GeminiApiKey);
+            var geminiResults = await GetGeminiRecommendations(query, config.GeminiApiKey, mediaType, resultCount);
 
             _logger.LogInformation("Received {Count} results from Gemini", geminiResults.Count);
 
@@ -98,11 +112,28 @@ public class GeminiController : ControllerBase
         }
     }
 
-    private async Task<List<MediaRecommendation>> GetGeminiRecommendations(string query, string apiKey)
+    private async Task<List<MediaRecommendation>> GetGeminiRecommendations(string query, string apiKey, string mediaType, int resultCount)
     {
         try
         {
-            _logger.LogInformation("Calling Gemini API for query: {Query}", query);
+            _logger.LogInformation("Calling Gemini API for query: {Query}, MediaType: {MediaType}, ResultCount: {ResultCount}",
+                query, mediaType, resultCount);
+
+            // Build media type constraint for the prompt
+            string mediaTypeConstraint = "";
+
+            switch (mediaType)
+            {
+                case "movie":
+                    mediaTypeConstraint = "IMPORTANT: Return ONLY movies, no TV shows or series.";
+                    break;
+                case "tv":
+                    mediaTypeConstraint = "IMPORTANT: Return ONLY TV shows/series, no movies.";
+                    break;
+                case "both":
+                    mediaTypeConstraint = "Return a mix of both movies and TV shows.";
+                    break;
+            }
 
             var requestPayload = new
             {
@@ -114,7 +145,13 @@ public class GeminiController : ControllerBase
                         {
                             new
                             {
-                                text = $@"Based on the query ""{query}"", recommend movies or TV shows based on the query (a minimum of 25 results is expected, defer to the query for number of results desired). Return ONLY a JSON array with objects containing ""title"", ""year"", ""type"" (""movie"" or ""tv""), and ""description"". No other text.
+                                text = $@"Based on the query ""{query}"", recommend {(mediaType == "both" ? "movies and TV shows" : mediaType == "movie" ? "movies" : "TV shows")} that match the request. 
+
+{mediaTypeConstraint}
+
+Return exactly {resultCount} results. Return ONLY a JSON array with objects containing ""title"", ""year"", ""type"" (""movie"" or ""tv""), and ""description"". No other text.
+
+For type field: use ""movie"" for movies and ""tv"" for TV shows/series.
 
 Example format:
 [
@@ -213,6 +250,19 @@ Example format:
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    // Filter results based on media type if specified (double-check Gemini's output)
+                    if (mediaType != "both" && recommendations != null)
+                    {
+                        recommendations = recommendations.Where(r =>
+                            string.Equals(r.Type, mediaType, StringComparison.OrdinalIgnoreCase) ||
+                            (mediaType == "tv" && (r.Type.ToLower().Contains("tv") || r.Type.ToLower().Contains("series")))
+                        ).ToList();
+
+                        _logger.LogInformation("Filtered to {Count} recommendations matching type '{MediaType}'",
+                            recommendations.Count, mediaType);
+                    }
+
                     _logger.LogInformation("Successfully parsed {Count} recommendations", recommendations?.Count ?? 0);
                     return recommendations ?? new List<MediaRecommendation>();
                 }

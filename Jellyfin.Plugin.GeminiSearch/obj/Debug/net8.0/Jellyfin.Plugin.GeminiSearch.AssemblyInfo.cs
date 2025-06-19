@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Jellyfin.Plugin.GeminiSearch")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("2.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.0.0.0+5b47d7435efffe008e06f7ab1feb944cb6509d81")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.0.0.0+1a85a7b4da67676e4d799fdb343fbe0b94101454")]
 [assembly: System.Reflection.AssemblyProductAttribute("Jellyfin.Plugin.GeminiSearch")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Jellyfin.Plugin.GeminiSearch")]
 [assembly: System.Reflection.AssemblyVersionAttribute("2.0.0.0")]

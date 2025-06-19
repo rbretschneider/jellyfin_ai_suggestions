@@ -29,6 +29,39 @@
                            style="font-size: 16px; padding: 12px;" />
                 </div>
 
+                <!-- Search Options -->
+                <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <!-- Media Type Selection -->
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused">Media Type:</label>
+                        <div style="margin-top: 8px;">
+                            <label style="display: flex; align-items: center; margin-bottom: 8px; cursor: pointer;">
+                                <input type="radio" name="mediaType" value="both" checked style="margin-right: 8px;">
+                                <span>🎬📺 Both Movies & TV Shows</span>
+                            </label>
+                            <label style="display: flex; align-items: center; margin-bottom: 8px; cursor: pointer;">
+                                <input type="radio" name="mediaType" value="movie" style="margin-right: 8px;">
+                                <span>🎬 Movies Only</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="mediaType" value="tv" style="margin-right: 8px;">
+                                <span>📺 TV Shows Only</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Number of Results -->
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="txtResultCount">Number of Results:</label>
+                        <input is="emby-input" type="number" id="txtResultCount" name="txtResultCount"
+                               value="25" min="5" max="50"
+                               style="font-size: 16px; padding: 12px; margin-top: 8px;" />
+                        <div class="fieldDescription" style="margin-top: 4px;">
+                            Between 5 and 50 results (default: 25)
+                        </div>
+                    </div>
+                </div>
+
                 <div style="margin-top: 15px;">
                     <button is="emby-button" type="button" id="btnSearch" class="raised button-submit block" style="font-size: 16px; padding: 12px 24px;">
                         <span>🚀 Search with AI</span>
@@ -144,7 +177,7 @@
                     }
                 }
 
-                // Initialize the page when DOM is ready - using multiple approaches for maximum compatibility
+                // Initialize the page when DOM is ready
                 function initializePage() {
                     debugLog('Initializing page');
 
@@ -171,7 +204,7 @@
                                         var enabledCheckbox = document.getElementById('chkEnabled');
 
                                         if (apiKeyInput) apiKeyInput.value = config.GeminiApiKey || '';
-                                        if (enabledCheckbox) enabledCheckbox.checked = config.Enabled !== false; // Default to true
+                                        if (enabledCheckbox) enabledCheckbox.checked = config.Enabled !== false;
 
                                         Dashboard.hideLoadingMsg();
                                         debugLog('Configuration loaded', config);
@@ -199,23 +232,22 @@
                         }
                     }, 100);
 
-                    // Setup all navigation functions globally - critical for accessibility
+                    // Setup all navigation functions globally
                     setupGlobalFunctions();
 
                     // Setup event listeners
                     setupEventListeners();
                 }
 
-                // Setup all functions globally - this is the key fix based on working plugin examples
+                // Setup all functions globally
                 function setupGlobalFunctions() {
                     debugLog('Setting up global functions');
 
-                    // Global navigation function - using the correct Jellyfin route
+                    // Global navigation function
                     window.navigateToItem = function (itemId, autoplay) {
                         debugLog('Navigating to item:', { itemId: itemId, autoplay: autoplay });
 
                         try {
-                            // Method 1: Use Dashboard.navigate with correct route from manual testing
                             if (typeof Dashboard !== 'undefined' && Dashboard.navigate) {
                                 if (autoplay) {
                                     Dashboard.navigate('details?id=' + itemId + '&autoplay=true');
@@ -226,7 +258,6 @@
                                 return;
                             }
 
-                            // Method 2: Direct hash navigation (fallback)
                             if (autoplay) {
                                 window.location.hash = '#!/details?id=' + itemId + '&autoplay=true';
                             } else {
@@ -240,18 +271,16 @@
                         }
                     };
 
-                    // Search function using proper Jellyfin patterns
+                    // Search function
                     window.searchForTitle = function (title) {
                         debugLog('Searching for title:', title);
                         try {
-                            // Method 1: Use Dashboard.navigate (restore what worked)
                             if (typeof Dashboard !== 'undefined' && Dashboard.navigate) {
                                 Dashboard.navigate('search.html?query=' + encodeURIComponent(title));
                                 debugLog('Used Dashboard.navigate for search');
                                 return;
                             }
 
-                            // Method 2: Direct hash navigation (fallback)
                             window.location.hash = '#!/search?query=' + encodeURIComponent(title);
                             debugLog('Used hash navigation for search fallback');
 
@@ -311,16 +340,13 @@
                             return;
                         }
 
-                        // Create a quick playlist to view all items
                         var titles = inLibraryItems.map(function (item) { return item.Title; }).join(', ');
 
                         if (confirm('Open item details for all ' + inLibraryItems.length + ' items in your library?\n\nItems: ' + titles.substring(0, 200) + (titles.length > 200 ? '...' : ''))) {
-                            // Open first item immediately
                             if (inLibraryItems[0]) {
                                 window.viewItem(inLibraryItems[0].JellyfinId);
                             }
 
-                            // Optional: Show a list of all items
                             setTimeout(function () {
                                 var itemList = 'All items in your library from this search:\n\n';
                                 for (var i = 0; i < inLibraryItems.length; i++) {
@@ -403,7 +429,25 @@
                         return;
                     }
 
+                    // Get media type selection
+                    var mediaTypeRadios = document.getElementsByName('mediaType');
+                    var selectedMediaType = 'both';
+                    for (var i = 0; i < mediaTypeRadios.length; i++) {
+                        if (mediaTypeRadios[i].checked) {
+                            selectedMediaType = mediaTypeRadios[i].value;
+                            break;
+                        }
+                    }
+
+                    // Get number of results
+                    var resultCountInput = document.getElementById('txtResultCount');
+                    var resultCount = resultCountInput ? parseInt(resultCountInput.value) : 25;
+                    if (isNaN(resultCount) || resultCount < 5) resultCount = 5;
+                    if (resultCount > 50) resultCount = 50;
+
+                    debugLog('Search options:', { mediaType: selectedMediaType, resultCount: resultCount });
                     debugLog('Starting search process');
+
                     var loadingDiv = document.getElementById('searchLoading');
                     var resultsDiv = document.getElementById('searchResults');
                     var searchBtn = document.getElementById('btnSearch');
@@ -413,7 +457,12 @@
                     if (searchBtn) searchBtn.disabled = true;
 
                     if (typeof ApiClient !== 'undefined') {
-                        var searchUrl = ApiClient.getUrl('Plugins/GeminiSearch/search?query=' + encodeURIComponent(query));
+                        // Build URL with all parameters properly using ApiClient.getUrl
+                        var searchUrl = ApiClient.getUrl('Plugins/GeminiSearch/search', {
+                            query: query,
+                            mediaType: selectedMediaType,
+                            resultCount: resultCount
+                        });
                         debugLog('Search URL constructed', searchUrl);
 
                         var headers = {
@@ -501,7 +550,6 @@
                                 html += '    <button onclick="viewItem(\'' + escapeHtml(result.JellyfinId) + '\');" style="background: #666; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">👁️ View Details</button>';
                                 html += '  </div>';
                             } else {
-                                // For items not in library, just show a search button to help find similar items
                                 html += '  <div style="display: flex; gap: 6px; flex-wrap: wrap;">';
                                 html += '    <button onclick="searchForTitle(\'' + escapeHtml(result.Title) + '\');" style="background: #cc7b19; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🔍 Search for Similar</button>';
                                 html += '  </div>';
@@ -541,10 +589,7 @@
                     if (modal) modal.style.display = 'block';
                     if (titleElement) titleElement.textContent = title || 'Select Playlist';
 
-                    // Store the items to add
                     window.pendingPlaylistItems = itemIds;
-
-                    // Load user's playlists
                     loadUserPlaylists();
                 }
 
@@ -565,7 +610,6 @@
                             'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
                         };
 
-                        // Get user's playlists
                         var playlistUrl = ApiClient.getUrl('Items', {
                             IncludeItemTypes: 'Playlist',
                             Recursive: true,
@@ -579,7 +623,6 @@
 
                                 if (data.Items && data.Items.length > 0) {
                                     for (var i = 0; i < data.Items.length; i++) {
-                                        var playlist = data.Items[i];
                                         html += '<div style="display: flex; align-items: center; padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.05); border-radius: 4px; cursor: pointer;" onclick="addItemsToPlaylist(\'' + escapeHtml(playlist.Id) + '\', \'' + escapeHtml(playlist.Name) + '\')">';
                                         html += '<span style="margin-right: 10px;">📝</span>';
                                         html += '<div style="flex: 1;">';
@@ -622,7 +665,6 @@
                             'Content-Type': 'application/json'
                         };
 
-                        // Use the correct Jellyfin API endpoint for adding items to playlist
                         var addUrl = ApiClient.getUrl('Playlists/' + playlistId + '/Items', {
                             UserId: ApiClient.getCurrentUserId(),
                             Ids: window.pendingPlaylistItems.join(',')
@@ -630,7 +672,6 @@
 
                         debugLog('Add to playlist URL:', addUrl);
 
-                        // Try POST method first (newer API)
                         fetch(addUrl, {
                             method: 'POST',
                             headers: headers
@@ -647,12 +688,10 @@
                                     return;
                                 }
 
-                                // If POST fails, try the alternative method
                                 return tryAlternativePlaylistAdd(playlistId, playlistName);
                             })
                             .catch(error => {
                                 debugLog('Error adding to playlist with POST:', error);
-                                // Try alternative method on error
                                 tryAlternativePlaylistAdd(playlistId, playlistName);
                             });
                     }
@@ -666,7 +705,6 @@
                             'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"'
                         };
 
-                        // Alternative: Add items one by one
                         var promises = window.pendingPlaylistItems.map(function (itemId) {
                             var url = ApiClient.getUrl('Playlists/' + playlistId + '/Items/' + itemId, {
                                 UserId: ApiClient.getCurrentUserId()
@@ -695,7 +733,6 @@
                             .catch(error => {
                                 debugLog('Error with alternative playlist add:', error);
 
-                                // Final fallback: Try using Jellyfin's built-in method
                                 if (window.PlaylistManager) {
                                     window.PlaylistManager.addToPlaylist(playlistId, window.pendingPlaylistItems)
                                         .then(() => {
@@ -746,7 +783,6 @@
                             MediaType: 'Video'
                         };
 
-                        // Include items if we have them
                         if (window.pendingPlaylistItems && window.pendingPlaylistItems.length > 0) {
                             requestBody.Ids = window.pendingPlaylistItems;
                         }
@@ -766,7 +802,6 @@
                                 debugLog('Create playlist response data:', data);
                                 if (data.Id) {
                                     if (window.pendingPlaylistItems && window.pendingPlaylistItems.length > 0) {
-                                        // Items were included in creation, we're done
                                         if (typeof Dashboard !== 'undefined' && Dashboard.alert) {
                                             Dashboard.alert('Playlist "' + playlistName + '" created with ' + window.pendingPlaylistItems.length + ' items!');
                                         } else {
@@ -796,36 +831,31 @@
                     }
                 }
 
-                // DOM ready pattern from working plugins
+                // DOM ready pattern
                 if (document.readyState === 'loading') {
                     document.addEventListener('DOMContentLoaded', initializePage);
                 } else {
-                    // DOM already loaded
                     initializePage();
                 }
 
-                // Also use the pageshow event as in original code
+                // Page events
                 var pageElement = document.getElementById('GeminiSearchPage');
                 if (pageElement) {
                     pageElement.addEventListener('pageshow', function () {
                         debugLog('Page show event fired');
-                        // Re-initialize if needed
                         if (!window.viewItem) {
                             setupGlobalFunctions();
                         }
                     });
 
-                    // Clean up when leaving the page
                     pageElement.addEventListener('pagehide', function () {
                         debugLog('Page hide event fired - cleaning up');
 
-                        // Close any open modals
                         var modal = document.getElementById('playlistModal');
                         if (modal) {
                             modal.style.display = 'none';
                         }
 
-                        // Clear any pending operations
                         window.pendingPlaylistItems = null;
                         currentSearchResults = [];
 
